@@ -8,6 +8,7 @@ document's icon or from a leading emoji in its title (whichever you use):
     👀  ->  Needs review
     🌱  ->  Being worked on
     ✅  ->  Recently shipped   (auto-culled after QUEUE_SHIPPED_DAYS days)
+    🥀  ->  Defunct            (kept visible, no longer worked on, never culled)
     ⏸️  ->  ignored (parked)
     🗄️  ->  ignored (archived)
 
@@ -45,7 +46,7 @@ def env(name, default=None, required=False):
     return value
 
 
-SCRIPT_VERSION = "2.1"
+SCRIPT_VERSION = "2.2"
 
 OUTLINE_URL = env("OUTLINE_URL", required=True).rstrip("/")
 API_KEY = env("OUTLINE_API_KEY", required=True)
@@ -60,11 +61,12 @@ HEADERS = {
 
 MIDDOT = "\u00b7"
 
-# Emoji -> status. Only these three appear in the queue.
+# Emoji -> status. These appear in the queue.
 TRACKED_EMOJI = {
-    "\U0001F440": "review",  # 👀
-    "\U0001F331": "draft",   # 🌱
-    "\u2705": "live",        # ✅
+    "\U0001F440": "review",   # 👀
+    "\U0001F331": "draft",    # 🌱
+    "\u2705": "live",         # ✅
+    "\U0001F940": "defunct",  # 🥀
 }
 
 # Section order, top to bottom: key, emoji, heading, text shown when empty.
@@ -72,6 +74,7 @@ SECTIONS = [
     ("review", "👀", "Needs review", "Nothing waiting on review."),
     ("draft", "🌱", "Being worked on", "Nothing in progress right now."),
     ("live", "✅", "Recently shipped", "Nothing shipped recently."),
+    ("defunct", "🥀", "Defunct", "Nothing defunct."),
 ]
 
 
@@ -173,7 +176,8 @@ def build_body(buckets):
         f"**{headline}**",
         f"👀 {counts['review']} to review  ·  "
         f"🌱 {counts['draft']} in progress  ·  "
-        f"✅ {counts['live']} recently shipped",
+        f"✅ {counts['live']} recently shipped  ·  "
+        f"🥀 {counts['defunct']} defunct",
         "",  # blank line drops the rebuilt date onto its own line below the status
         f"Rebuilt {now}",
         ":::",
@@ -210,7 +214,7 @@ def main():
     print(f"review_queue.py {SCRIPT_VERSION} starting")
     now = datetime.now(timezone.utc)
     shipped_cutoff = now - timedelta(days=SHIPPED_DAYS)
-    buckets = {"review": [], "draft": [], "live": []}
+    buckets = {"review": [], "draft": [], "live": [], "defunct": []}
 
     for doc in list_all_documents():
         if doc.get("title", "").strip().lower() == QUEUE_TITLE.strip().lower():
@@ -238,7 +242,8 @@ def main():
         f"Updated '{QUEUE_TITLE}': "
         f"{len(buckets['review'])} to review, "
         f"{len(buckets['draft'])} in progress, "
-        f"{len(buckets['live'])} recently shipped."
+        f"{len(buckets['live'])} recently shipped, "
+        f"{len(buckets['defunct'])} defunct."
     )
 
 
