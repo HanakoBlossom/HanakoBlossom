@@ -22,3 +22,4 @@ jobs:
         env:
           OUTLINE_URL: ${{ secrets.OUTLINE_URL }}
           OUTLINE_API_KEY: ${{ secrets.OUTLINE_API_KEY }}
+          QUEUE_SHIPPED_DAYS: ${{ secrets.QUEUE_SHIPPED_DAYS }}
