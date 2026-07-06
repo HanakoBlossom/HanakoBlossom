@@ -45,7 +45,7 @@ def env(name, default=None, required=False):
     return value
 
 
-SCRIPT_VERSION = "2.0-snazzy"
+SCRIPT_VERSION = "2.1"
 
 OUTLINE_URL = env("OUTLINE_URL", required=True).rstrip("/")
 API_KEY = env("OUTLINE_API_KEY", required=True)
@@ -174,6 +174,7 @@ def build_body(buckets):
         f"👀 {counts['review']} to review  ·  "
         f"🌱 {counts['draft']} in progress  ·  "
         f"✅ {counts['live']} recently shipped",
+        "",  # blank line drops the rebuilt date onto its own line below the status
         f"Rebuilt {now}",
         ":::",
         "",
