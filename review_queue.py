@@ -65,11 +65,11 @@ TRACKED_EMOJI = {
     "\u2705": "live",        # ✅
 }
 
-# Section order, top to bottom, and their headings.
+# Section order, top to bottom: key, emoji, heading, text shown when empty.
 SECTIONS = [
-    ("review", "Needs review"),
-    ("draft", "Being worked on"),
-    ("live", "Recently shipped"),
+    ("review", "👀", "Needs review", "Nothing waiting on review."),
+    ("draft", "🌱", "Being worked on", "Nothing in progress right now."),
+    ("live", "✅", "Recently shipped", "Nothing shipped recently."),
 ]
 
 
@@ -160,30 +160,43 @@ def find_queue_doc_id():
 
 def build_body(buckets):
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    counts = {key: len(rows) for key, rows in buckets.items()}
+
+    # Amber banner when reviews are waiting, green when caught up.
+    banner = "warning" if counts["review"] else "tip"
+    headline = ("You have items waiting on review" if counts["review"]
+                else "All caught up on reviews")
     lines = [
-        ":::info",
-        "Auto-generated. Do not edit by hand; changes are overwritten on the next run.",
-        f"Last rebuilt: {now}",
+        f":::{banner}",
+        f"**{headline}**",
+        f"👀 {counts['review']} to review  ·  "
+        f"🌱 {counts['draft']} in progress  ·  "
+        f"✅ {counts['live']} recently shipped",
+        f"Rebuilt {now}",
         ":::",
         "",
     ]
-    for key, heading in SECTIONS:
-        lines.append(f"# {heading}")
+
+    for key, emoji, heading, empty_text in SECTIONS:
+        lines.append(f"## {emoji} {heading}")
         lines.append("")
         rows = buckets[key]
         if not rows:
-            lines.append("_Nothing here right now._")
+            lines.append(f"_{empty_text}_")
             lines.append("")
             continue
         lines.append("| Doc | Owner | Notes |")
-        lines.append("|---|---|---|")
+        lines.append("| :-- | :-- | :-- |")
         for d in rows:
             title = cell(strip_leading_emoji(d.get("title", "Untitled")))
             url = OUTLINE_URL + (d.get("url", "") or "")
             owner = cell(d.get("_owner", ""))
             notes = cell(d.get("_notes", ""))
-            lines.append(f"| [{title}]({url}) | {owner} | {notes} |")
+            lines.append(f"| **[{title}]({url})** | {owner} | {notes} |")
         lines.append("")
+
+    lines.append("---")
+    lines.append("_Auto-generated. Edits here are overwritten on the next run._")
     return "\n".join(lines).rstrip() + "\n"
 
 
